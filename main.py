@@ -1,13 +1,16 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import urllib.parse
+from urllib.parse import urlparse, parse_qs
 from mimetypes import guess_type
 from pathlib import Path
 import socket
 from threading import Thread
+from datetime import datetime
+import json
+
 
 class HttpHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        pr_url = urllib.parse.urlparse(self.path)
+        pr_url = urlparse(self.path)
         if pr_url.path == '/':
             self.send_html_file('index.html')
         elif pr_url.path == '/message.html':
@@ -38,7 +41,7 @@ class HttpHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> dict:
         data = self.rfile.read(int(self.headers['Content-Length']))
-        print(f'A----------------------------------------{data}')
+        self.write_to_json(data)
         self.send_data_to_socket(data.decode())
         self.send_response(302)
         self.send_header('Location', '/')
@@ -50,7 +53,6 @@ class HttpHandler(BaseHTTPRequestHandler):
 
         client_socket = socket.socket()
         client_socket.connect((host, port))
-        # message= input('---> ')
 
         while message.lower():
             client_socket.send(message.encode())
@@ -59,9 +61,20 @@ class HttpHandler(BaseHTTPRequestHandler):
 
         client_socket.close()
     
-    def write_to_json(self, ):
+    def write_to_json(self, data_qs):
+        current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        parse_qs = parse_qs(data_qs)
+        parsed_data = {key.decode(): value[0].decode() for key, value in parse_qs.items()}
+        username = parsed_data.get('username')
+        message = parsed_data.get('message')
+
+        entry = {
+        "username": username,
+        "message": message
+        }
+
         with open('storage/data.json', 'a') as json_file:
-            json_file.write(data)
+            json.dump({current_datetime: entry}, json_file, indent=4)
 
 
 def server_socket():
