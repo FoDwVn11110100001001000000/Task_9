@@ -63,8 +63,8 @@ class HttpHandler(BaseHTTPRequestHandler):
     
     def write_to_json(self, data_qs):
         current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-        parse_qs = parse_qs(data_qs)
-        parsed_data = {key.decode(): value[0].decode() for key, value in parse_qs.items()}
+        parse = parse_qs(data_qs)
+        parsed_data = {key.decode(): value[0].decode() for key, value in parse.items()}
         username = parsed_data.get('username')
         message = parsed_data.get('message')
 
